@@ -1,7 +1,7 @@
 """
 Group: 13
 Date: 2026-03-23
-Members: Aymane Chalh, Team MAS 13
+Members: Aymane Chalh, Adham Noureldin, Mohamed Benkirane
 """
 from mesa.visualization import Slider, SolaraViz, make_plot_component, make_space_component
 from mesa.visualization.components import AgentPortrayalStyle

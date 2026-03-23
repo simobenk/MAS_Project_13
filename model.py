@@ -1,7 +1,7 @@
 """
 Group: 13
 Date: 2026-03-23
-Members: Aymane Chalh, Team MAS 13
+Members: Aymane Chalh, Adham Noureldin, Mohamed Benkirane
 """
 import random
 from mesa import Model
