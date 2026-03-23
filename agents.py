@@ -20,10 +20,16 @@ class BaseRobot(Agent):
         self.percepts = {}
 
     def update(self, knowledge, percepts):
-        """Updates knowledge with the latest percepts."""
+        """Updates knowledge with the latest percepts while preventing memory leaks."""
         knowledge["time_steps"].append({"percepts": percepts, "action": None})
+        
+        # FIX: Cap the memory to the last 5 steps to prevent unbounded memory growth
+        knowledge["time_steps"] = knowledge["time_steps"][-5:]
+        
         if percepts.get("messages"):
             knowledge["messages_seen"].extend(percepts["messages"])
+            # FIX: Cap the message history too
+            knowledge["messages_seen"] = knowledge["messages_seen"][-50:]
 
     def deliberate(self, knowledge):
         """The reasoning step. Must only depend on `knowledge`."""
@@ -35,9 +41,10 @@ class BaseRobot(Agent):
             radioactivity = getattr(obj, "radioactivity", None)
             if radioactivity is None:
                 continue
-            if radioactivity < 0.33:
+            # FIX: Use <= to ensure exact boundary values (0.33, 0.66) are categorized correctly
+            if radioactivity <= 0.33:
                 return "z1"
-            if radioactivity < 0.66:
+            if radioactivity <= 0.66:
                 return "z2"
             return "z3"
         return None

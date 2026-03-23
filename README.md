@@ -1,67 +1,87 @@
 # MAS Project 13 - Robot Mission 2026
 
-## Setup
+Multi-agent simulation where robots cooperatively transform and dispose waste across three zones:
 
-Install dependencies in your environment:
+- z1: green waste source
+- z2: intermediate processing area
+- z3: red-waste disposal area
+
+The objective is to maximize disposed red waste while minimizing remaining waste, runtime, and communication overhead.
+
+## Quick Start
+
+Install dependencies:
 
 ```bash
 pip install mesa solara matplotlib pandas
 ```
 
-## Run the simulation UI
+Run the UI:
 
 ```bash
-python3 run.py
+python run.py
 ```
 
-In the UI, use `Model Parameters` and click `RESET` to apply changes.
+Then open the Solara URL and click RESET after changing parameters.
 
-## Implemented strategies
+## Core Behavior
 
-- `random_no_comm` (`strategy=0`): no communication, random exploration.
-- `memory_no_comm` (`strategy=10`): no communication, local memory-driven exploration.
-- `comm` (`strategy=20`): communication enabled with broadcast messages.
+- GreenAgent (z1 only): picks green, transforms 2 green -> 1 yellow, drops yellow near z1->z2 frontier.
+- YellowAgent (z1-z2): picks yellow, transforms 2 yellow -> 1 red, drops red near z2->z3 frontier.
+- RedAgent (z1-z3): picks red, transports to disposal zone in far-east column, disposes red.
 
-## Communication protocol
+## Strategies
 
-Messages follow a structured ACL-like format:
+- random_no_comm (strategy 0): random moves, no messaging.
+- memory_no_comm (strategy 10): local/adjacent targeting bias, no messaging.
+- comm (strategy 20): message sharing enabled.
 
-- `id`, `performative`, `sender`, `receivers`, `content`, `timestamp`, `ttl`
-- Compatibility fields: `waste_color`, `position`, `zone`
+Internally, aliases 1->memory_no_comm and 2->comm are also accepted.
 
-## Collected metrics
+## Communication Protocol
 
-- Waste: `Green Waste`, `Yellow Waste`, `Red Waste`, `Total Waste`
-- Progress: `Disposed Red Waste`, `Cleanup Time (step)`, `Objective Score`
-- Communication: `Messages Sent`, `Messages Expired`, `Messages Consumed`, `Active Messages`
+Messages are model-level broadcast records with TTL.
 
-## Batch experiments
+Message fields:
 
-Run reproducible benchmarks over multiple seeds and strategies:
+- id
+- performative (inform)
+- sender
+- receivers (broadcast)
+- content: waste_color, position, zone, kind
+- timestamp
+- ttl
+- used (consumption flag)
+
+Protocol rules:
+
+- Producers: robots in comm mode broadcast locally observed waste (current tile or adjacent tile).
+- Kinds: waste_spotted (from local detection), dropped_waste (when red is put down outside disposal).
+- De-duplication: identical active messages are suppressed.
+- Cooldown: repeated sender/position/color/kind broadcasts are rate-limited.
+- Consumption: a robot may attach consume_message_id when selecting a target from messages.
+- Expiration: ttl decreases each step; expired messages are removed and counted.
+
+### Sequence Diagram (Agent Communication)
+
+![Agent communication sequence diagram](mermaid-diagram-2026-03-23-160608.png)
+
+## Metrics Collected
+
+- Waste state: Total Waste, Green Waste, Yellow Waste, Red Waste, Waste In Robots
+- Progress: Disposed Red Waste, Cleanup Time (step), Objective Score
+- Communication: Messages Sent, Messages Expired, Messages Consumed, Active Messages
+
+Objective Score:
+
+score = 100 * disposed_red_waste - 10 * remaining_waste - current_step - 0.2 * messages_sent
+
+## Batch Experiments
+
+Run reproducible benchmarks:
 
 ```bash
-python3 experiments.py --runs 20 --steps 500 --output results/strategy_benchmark.csv
+python experiments.py --runs 20 --steps 500 --output results/strategy_benchmark.csv
 ```
 
-The CSV can be used for tables/plots in the final report.
-
-## Benchmark results (current version)
-
-Configuration:
-
-- Command: `python3 experiments.py --runs 20 --steps 500 --output results/strategy_benchmark.csv`
-- 20 runs per strategy, seeds `1000..1019`
-
-Main results:
-
-| Strategy         | Mean Objective Score | Mean Remaining Waste | Mean Disposed Red Waste | Mean Messages Sent | Clean-all Rate |
-|------------------|----------------------|-----------------------|--------------------------|--------------------|----------------|
-| `comm`           | `-55.01`             | `2.45`                | `4.15`                   | `35.55`            | `20%`          |
-| `memory_no_comm` | `-282.00`            | `4.70`                | `2.65`                   | `0.00`             | `0%`           |
-| `random_no_comm` | `-571.00`            | `7.10`                | `0.00`                   | `0.00`             | `0%`           |
-
-Interpretation:
-
-- Communication strategy (`comm`) is best on average after adding anti-spam message control.
-- `memory_no_comm` improves over random but remains significantly weaker than `comm`.
-- Random baseline is the least effective and never disposes red waste in this benchmark.
+Output CSV contains per-run metrics for each strategy.

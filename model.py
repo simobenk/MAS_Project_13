@@ -87,12 +87,13 @@ class RobotMission(Model):
         self.datacollector.collect(self)
 
     def _spawn_robots(self, RobotClass, count, z1_bound, height):
-        """Helper method to place robots on the grid."""
+        """Helper method to place robots on the grid and initialize their first percepts."""
         for _ in range(count):
             x = random.randrange(z1_bound)
             y = random.randrange(height)
             robot = RobotClass(self)
             self.grid.place_agent(robot, (x, y))
+            robot.percepts = self._generate_percepts(robot)
 
     def step(self):
         """Advances the simulation by one step."""
