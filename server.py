@@ -4,7 +4,40 @@ Date: 2026-03-23
 Members: Aymane Chalh, Team MAS 13
 """
 from mesa.visualization import Slider, SolaraViz, make_plot_component, make_space_component
+from mesa.visualization.components import AgentPortrayalStyle
 from model import RobotMission
+
+
+ZONE_COLORS = {
+    "z1": "#d9f2e3",
+    "z2": "#fdf1c7",
+    "z3": "#f7d7d5",
+}
+
+
+def style_space(ax):
+    """Paints zone backgrounds and a clean grid so objects are easy to read."""
+    _, x_max = ax.get_xlim()
+    _, y_max = ax.get_ylim()
+    width = int(round(x_max + 0.5))
+    height = int(round(y_max + 0.5))
+
+    z1_bound = width // 3
+    z2_bound = 2 * (width // 3)
+
+    ax.axvspan(-0.5, z1_bound - 0.5, facecolor=ZONE_COLORS["z1"], zorder=0)
+    ax.axvspan(z1_bound - 0.5, z2_bound - 0.5, facecolor=ZONE_COLORS["z2"], zorder=0)
+    ax.axvspan(z2_bound - 0.5, width - 0.5, facecolor=ZONE_COLORS["z3"], zorder=0)
+
+    for x in range(width + 1):
+        ax.axvline(x - 0.5, color="#ffffff", linewidth=0.7, alpha=0.7, zorder=0.4)
+    for y in range(height + 1):
+        ax.axhline(y - 0.5, color="#ffffff", linewidth=0.7, alpha=0.7, zorder=0.4)
+
+    ax.set_xticks([])
+    ax.set_yticks([])
+    ax.set_aspect("equal", adjustable="box")
+
 
 def agent_portrayal(agent):
     """Maps each agent type to a shape, color, and size on the Solara grid."""
@@ -13,34 +46,66 @@ def agent_portrayal(agent):
 
     # --- THE FLOOR ---
     if type(agent).__name__ == "RadioactivityAgent":
-        if agent.zone == "z1":
-            color = "#e0ffe0"
-        elif agent.zone == "z2":
-            color = "#ffffe0"
-        else:
-            color = "#ffe0e0"
-        return {"color": color, "marker": "s", "size": 500}
+        # Background zones are drawn in style_space; floor agents stay hidden.
+        return AgentPortrayalStyle(
+            color="#000000",
+            marker="s",
+            size=1,
+            edgecolors="#000000",
+            linewidths=0.0,
+            alpha=0.0,
+            zorder=0,
+        )
 
     # --- THE DISPOSAL ZONE ---
     elif type(agent).__name__ == "WasteDisposalZoneAgent":
-        return {"color": "black", "marker": "s", "size": 500}
+        return AgentPortrayalStyle(
+            color="#111827",
+            marker="s",
+            size=165,
+            edgecolors="#f8fafc",
+            linewidths=1.4,
+            alpha=0.98,
+            zorder=1,
+        )
 
     # --- THE WASTE ---
     elif type(agent).__name__ == "WasteAgent":
-        return {"color": agent.color, "marker": "o", "size": 50}
+        palette = {
+            "green": "#22c55e",
+            "yellow": "#eab308",
+            "red": "#ef4444",
+        }
+        return AgentPortrayalStyle(
+            color=palette.get(agent.color, agent.color),
+            marker="o",
+            size=70,
+            edgecolors="#0f172a",
+            linewidths=0.9,
+            alpha=1.0,
+            zorder=1,
+        )
 
     # --- THE ROBOTS ---
     elif type(agent).__name__ in ["GreenAgent", "YellowAgent", "RedAgent"]:
         if type(agent).__name__ == "GreenAgent":
-            color = "darkgreen"
+            color = "#166534"
         elif type(agent).__name__ == "YellowAgent":
-            color = "goldenrod"
+            color = "#a16207"
         else:
-            color = "darkred"
-        return {"color": color, "marker": "o", "size": 150}
+            color = "#991b1b"
+        return AgentPortrayalStyle(
+            color=color,
+            marker="o",
+            size=200,
+            edgecolors="#ffffff",
+            linewidths=1.6,
+            alpha=1.0,
+            zorder=1,
+        )
 
 
-SpaceGraph = make_space_component(agent_portrayal)
+SpaceGraph = make_space_component(agent_portrayal, post_process=style_space, draw_grid=False)
 WastePlot = make_plot_component(["Green Waste", "Yellow Waste", "Red Waste", "Total Waste"])
 DisposedPlot = make_plot_component(["Disposed Red Waste"])
 MessagePlot = make_plot_component(["Messages Sent", "Messages Expired", "Messages Consumed", "Active Messages"])
