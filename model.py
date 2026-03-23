@@ -32,6 +32,7 @@ class RobotMission(Model):
         self.messages_consumed_total = 0
         self.current_step = 0
         self.cleanup_time_step = None
+        self.message_cooldown_steps = 4
 
         z1_bound = width // 3
         z2_bound = 2 * (width // 3)
@@ -307,6 +308,9 @@ class RobotMission(Model):
         return "comm"
 
     def _emit_message(self, sender, performative, content):
+        if self._should_skip_message(sender, performative, content):
+            return
+
         self._message_id_seq += 1
         message = {
             "id": self._message_id_seq,
@@ -324,6 +328,33 @@ class RobotMission(Model):
         }
         self.messages.append(message)
         self.messages_sent_total += 1
+
+    def _should_skip_message(self, sender, performative, content):
+        waste_color = content.get("waste_color")
+        position = content.get("position")
+        kind = content.get("kind")
+
+        for message in self.messages:
+            existing_content = message.get("content", {})
+            # 1) Global de-duplication: avoid flooding identical active messages.
+            if (
+                message.get("performative") == performative
+                and existing_content.get("kind") == kind
+                and existing_content.get("waste_color") == waste_color
+                and existing_content.get("position") == position
+            ):
+                return True
+
+            # 2) Sender-level cooldown: avoid repeated broadcasts every step.
+            if (
+                message.get("sender") == sender
+                and existing_content.get("kind") == kind
+                and existing_content.get("waste_color") == waste_color
+                and existing_content.get("position") == position
+                and self.current_step - message.get("timestamp", -10**9) < self.message_cooldown_steps
+            ):
+                return True
+        return False
 
     def _consume_message(self, message_id):
         for message in self.messages:
