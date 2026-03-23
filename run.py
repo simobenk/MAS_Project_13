@@ -1,7 +1,7 @@
 """
-Group: [Insert Group Number]
-Date: 2026-03-16
-Members: [Name 1], [Name 2], [Name 3]
+Group: 13
+Date: 2026-03-23
+Members: Aymane Chalh, Team MAS 13
 """
 import os
 

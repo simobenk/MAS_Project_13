@@ -1,9 +1,9 @@
 """
-Group: [Insert Group Number]
-Date: 2026-03-16
-Members: [Name 1], [Name 2], [Name 3]
+Group: 13
+Date: 2026-03-23
+Members: Aymane Chalh, Team MAS 13
 """
-from mesa.visualization import SolaraViz, make_space_component
+from mesa.visualization import Slider, SolaraViz, make_plot_component, make_space_component
 from model import RobotMission
 
 def agent_portrayal(agent):
@@ -41,21 +41,38 @@ def agent_portrayal(agent):
 
 
 SpaceGraph = make_space_component(agent_portrayal)
+WastePlot = make_plot_component(["Green Waste", "Yellow Waste", "Red Waste", "Total Waste"])
+DisposedPlot = make_plot_component(["Disposed Red Waste"])
+MessagePlot = make_plot_component(["Messages Sent", "Messages Expired", "Messages Consumed", "Active Messages"])
+ScorePlot = make_plot_component(["Objective Score"])
 
 model_params = {
-    "width": 15,
-    "height": 10,
-    "initial_green_wastes": 10,
-    "num_green_robots": 2,
-    "num_yellow_robots": 2,
-    "num_red_robots": 1
+    "width": Slider("Grid Width", value=15, min=9, max=40, step=1, dtype=int),
+    "height": Slider("Grid Height", value=10, min=6, max=30, step=1, dtype=int),
+    "initial_green_wastes": Slider("Initial Green Wastes", value=10, min=1, max=120, step=1, dtype=int),
+    "num_green_robots": Slider("Green Robots", value=2, min=1, max=20, step=1, dtype=int),
+    "num_yellow_robots": Slider("Yellow Robots", value=2, min=1, max=20, step=1, dtype=int),
+    "num_red_robots": Slider("Red Robots", value=1, min=1, max=20, step=1, dtype=int),
+    "message_ttl": Slider("Message TTL", value=10, min=1, max=50, step=1, dtype=int),
+    "strategy": Slider("Strategy (0/10/20)", value=20, min=0, max=20, step=10, dtype=int),
+    "seed": Slider("Random Seed", value=42, min=0, max=9999, step=1, dtype=int),
 }
 
-# Mesa 3.x: SolaraViz now takes a model *instance*, not the class
-model = RobotMission(**model_params)
+default_model = RobotMission(
+    width=15,
+    height=10,
+    initial_green_wastes=10,
+    num_green_robots=2,
+    num_yellow_robots=2,
+    num_red_robots=1,
+    message_ttl=10,
+    strategy="comm",
+    seed=42,
+)
 
 page = SolaraViz(
-    model=model,
-    components=[SpaceGraph],
+    model=default_model,
+    components=[SpaceGraph, WastePlot, DisposedPlot, MessagePlot, ScorePlot],
+    model_params=model_params,
     name="Robot Waste Cleanup Mission"
 )
