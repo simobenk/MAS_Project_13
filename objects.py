@@ -10,7 +10,6 @@ class RadioactivityAgent(Agent):
     """
     Static agent representing the radioactivity level of a grid cell.
     """
-    # Mesa 3.x: No unique_id parameter — assigned automatically by the framework
     def __init__(self, model, zone):
         super().__init__(model)
         self.zone = zone
@@ -29,16 +28,14 @@ class WasteAgent(Agent):
     """
     Static agent representing a piece of waste on the grid.
     """
-    # Mesa 3.x: No unique_id parameter
     def __init__(self, model, color):
         super().__init__(model)
-        self.color = color  # "green", "yellow", or "red"
+        self.color = color
 
 class WasteDisposalZoneAgent(Agent):
     """
     Static agent representing the final destination for red waste.
     """
-    # Mesa 3.x: No unique_id parameter
     def __init__(self, model):
         super().__init__(model)
         self.is_disposal_zone = True

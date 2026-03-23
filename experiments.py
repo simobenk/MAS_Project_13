@@ -11,6 +11,7 @@ from model import RobotMission
 
 
 def run_once(strategy, seed, steps, params):
+    """Run one simulation instance and return a flat metrics row."""
     model = RobotMission(strategy=strategy, seed=seed, **params)
     for _ in range(steps):
         model.step()
@@ -34,6 +35,7 @@ def run_once(strategy, seed, steps, params):
 
 
 def main():
+    """Run reproducible benchmark batches and export results to CSV."""
     parser = argparse.ArgumentParser(description="Batch experiments for RobotMission strategies.")
     parser.add_argument("--runs", type=int, default=20, help="Number of runs per strategy.")
     parser.add_argument("--steps", type=int, default=500, help="Max steps per run.")

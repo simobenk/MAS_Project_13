@@ -44,9 +44,7 @@ def agent_portrayal(agent):
     if agent is None:
         return
 
-    # --- THE FLOOR ---
     if type(agent).__name__ == "RadioactivityAgent":
-        # Background zones are drawn in style_space; floor agents stay hidden.
         return AgentPortrayalStyle(
             color="#000000",
             marker="s",
@@ -57,7 +55,6 @@ def agent_portrayal(agent):
             zorder=0,
         )
 
-    # --- THE DISPOSAL ZONE ---
     elif type(agent).__name__ == "WasteDisposalZoneAgent":
         return AgentPortrayalStyle(
             color="#111827",
@@ -69,7 +66,6 @@ def agent_portrayal(agent):
             zorder=1,
         )
 
-    # --- THE WASTE ---
     elif type(agent).__name__ == "WasteAgent":
         palette = {
             "green": "#22c55e",
@@ -86,7 +82,6 @@ def agent_portrayal(agent):
             zorder=1,
         )
 
-    # --- THE ROBOTS ---
     elif type(agent).__name__ in ["GreenAgent", "YellowAgent", "RedAgent"]:
         if type(agent).__name__ == "GreenAgent":
             color = "#166534"

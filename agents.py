@@ -20,15 +20,12 @@ class BaseRobot(Agent):
         self.percepts = {}
 
     def update(self, knowledge, percepts):
-        """Updates knowledge with the latest percepts while preventing memory leaks."""
+        """Update local memory with the latest percepts and bounded history."""
         knowledge["time_steps"].append({"percepts": percepts, "action": None})
-        
-        # FIX: Cap the memory to the last 5 steps to prevent unbounded memory growth
         knowledge["time_steps"] = knowledge["time_steps"][-5:]
-        
+
         if percepts.get("messages"):
             knowledge["messages_seen"].extend(percepts["messages"])
-            # FIX: Cap the message history too
             knowledge["messages_seen"] = knowledge["messages_seen"][-50:]
 
     def deliberate(self, knowledge):
@@ -37,11 +34,11 @@ class BaseRobot(Agent):
 
     @staticmethod
     def _tile_zone(contents):
+        """Infer zone label from radioactivity values present in a tile."""
         for obj in contents:
             radioactivity = getattr(obj, "radioactivity", None)
             if radioactivity is None:
                 continue
-            # FIX: Use <= to ensure exact boundary values (0.33, 0.66) are categorized correctly
             if radioactivity <= 0.33:
                 return "z1"
             if radioactivity <= 0.66:

@@ -46,7 +46,6 @@ class RobotMission(Model):
                 else:
                     zone = "z3"
 
-                # Mesa 3.x: No unique_id argument — it is assigned automatically
                 rad_agent = RadioactivityAgent(self, zone)
                 self.grid.place_agent(rad_agent, (x, y))
 
@@ -280,7 +279,7 @@ class RobotMission(Model):
         return self._count_waste() + self._count_inventory_waste()
 
     def objective_score(self):
-        # Higher is better: dispose more while minimizing time and communication overhead.
+        """Compute a scalar objective balancing disposal, time, and communication."""
         return (
             100 * self.disposed_red_waste
             - 10 * self.remaining_waste()
@@ -309,6 +308,7 @@ class RobotMission(Model):
         return "comm"
 
     def _emit_message(self, sender, performative, content):
+        """Create and store a structured message with de-duplication."""
         if self._should_skip_message(sender, performative, content):
             return
 
@@ -319,7 +319,6 @@ class RobotMission(Model):
             "sender": sender,
             "receivers": "broadcast",
             "content": dict(content),
-            # Compatibility fields consumed by existing behaviors:
             "waste_color": content.get("waste_color"),
             "position": content.get("position"),
             "zone": content.get("zone"),
@@ -331,13 +330,13 @@ class RobotMission(Model):
         self.messages_sent_total += 1
 
     def _should_skip_message(self, sender, performative, content):
+        """Prevent repeated equivalent messages from flooding the mailbox."""
         waste_color = content.get("waste_color")
         position = content.get("position")
         kind = content.get("kind")
 
         for message in self.messages:
             existing_content = message.get("content", {})
-            # 1) Global de-duplication: avoid flooding identical active messages.
             if (
                 message.get("performative") == performative
                 and existing_content.get("kind") == kind
@@ -346,7 +345,6 @@ class RobotMission(Model):
             ):
                 return True
 
-            # 2) Sender-level cooldown: avoid repeated broadcasts every step.
             if (
                 message.get("sender") == sender
                 and existing_content.get("kind") == kind
