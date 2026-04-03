@@ -1,7 +1,7 @@
 """
 Group: 13
 Date: 2026-04-03
-Members: Aymane Chalh, Team MAS 13
+Members: Aymane Chalh, Adham Noureldin, Mohamed Benkirane, Team MAS 13
 """
 import random
 from mesa import Agent
@@ -33,6 +33,7 @@ class BaseRobot(Agent):
             "known_wastes": {"green": set(), "yellow": set(), "red": set()},
             "step_index": 0,
             "next_partner_broadcast_step": 0,
+            "next_accept_step": 0,
             "collab": {
                 "active": False,
                 "waiting_accept": False,

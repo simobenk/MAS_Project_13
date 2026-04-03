@@ -1,7 +1,7 @@
 """
 Group: 13
 Date: 2026-04-03
-Members: Aymane Chalh, Team MAS 13
+Members: Aymane Chalh, Adham Noureldin, Mohamed Benkirane, Team MAS 13
 """
 import random
 
@@ -250,6 +250,16 @@ class RobotMission(Model):
                 msg.get("sender") == sender
                 and msg.get("receiver") == receiver
                 and msg.get("performative") == performative
+                and msg.get("channel") == channel
+                and msg.get("content") == content
+                and self.current_step - msg.get("timestamp", -10**9) < self.message_cooldown_steps
+            ):
+                return True
+
+            if (
+                performative == "ACCEPT"
+                and msg.get("receiver") == receiver
+                and msg.get("performative") == "ACCEPT"
                 and msg.get("channel") == channel
                 and msg.get("content") == content
                 and self.current_step - msg.get("timestamp", -10**9) < self.message_cooldown_steps

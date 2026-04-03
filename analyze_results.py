@@ -1,4 +1,8 @@
-"""Analyze strategy benchmark CSV files and generate summary tables/plots."""
+"""
+Group: 13
+Date: 2026-04-03
+Members: Aymane Chalh, Adham Noureldin, Mohamed Benkirane, Team MAS 13
+"""
 import argparse
 from pathlib import Path
 

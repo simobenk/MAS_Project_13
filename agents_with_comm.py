@@ -1,13 +1,17 @@
 """
 Group: 13
 Date: 2026-04-03
-Members: Aymane Chalh, Team MAS 13
+Members: Aymane Chalh, Adham Noureldin, Mohamed Benkirane, Team MAS 13
 """
 from agents_base import GreenRobotBase, YellowRobotBase, RedRobotBase
 
 
 class _WithCommMixin:
     """Communication-enabled decision logic using INFORM/PROPOSE/ACCEPT."""
+    COORD_REQUEST_MIN_HOLD = 18
+    COORD_REQUEST_COOLDOWN = 40
+    MAX_ACCEPT_DISTANCE = 3
+    ACCEPT_COOLDOWN = 30
 
     def _deliberate_with_comm(self, knowledge):
         percepts = knowledge["time_steps"][-1]["percepts"] if knowledge["time_steps"] else {}
@@ -89,7 +93,7 @@ class _WithCommMixin:
             not collab["active"]
             and not collab["waiting_accept"]
             and self._holds_one_target()
-            and hold_steps >= 10
+            and hold_steps >= self.COORD_REQUEST_MIN_HOLD
         ):
             if self.knowledge["step_index"] >= self.knowledge.get("next_partner_broadcast_step", 0):
                 outbox.append(
@@ -107,7 +111,9 @@ class _WithCommMixin:
                 collab["waiting_accept"] = True
                 collab["timeout"] = self.COLLAB_TIMEOUT
                 collab["meeting_pos"] = current_pos
-                self.knowledge["next_partner_broadcast_step"] = self.knowledge["step_index"] + 20
+                self.knowledge["next_partner_broadcast_step"] = (
+                    self.knowledge["step_index"] + self.COORD_REQUEST_COOLDOWN
+                )
 
         if not collab["active"]:
             return None
@@ -145,8 +151,20 @@ class _WithCommMixin:
             if performative == "PROPOSE" and content.get("kind") == "need_partner":
                 if sender == self.agent_name():
                     continue
+                meeting_pos_raw = content.get("meeting_pos", percepts.get("current_pos"))
+                if not (isinstance(meeting_pos_raw, (list, tuple)) and len(meeting_pos_raw) == 2):
+                    continue
+                meeting_pos = tuple(meeting_pos_raw)
+                current_pos = percepts.get("current_pos")
+                if not (isinstance(current_pos, (list, tuple)) and len(current_pos) == 2):
+                    continue
+                distance = abs(current_pos[0] - meeting_pos[0]) + abs(current_pos[1] - meeting_pos[1])
+                if distance > self.MAX_ACCEPT_DISTANCE:
+                    continue
+                if self.knowledge["step_index"] < self.knowledge.get("next_accept_step", 0):
+                    continue
+
                 if self._holds_one_target() and not collab["active"] and not collab["waiting_accept"]:
-                    meeting_pos = tuple(content.get("meeting_pos", percepts.get("current_pos")))
                     outbox.append(
                         self._build_message(
                             receiver=sender,
@@ -169,6 +187,7 @@ class _WithCommMixin:
                             "timeout": self.COLLAB_TIMEOUT,
                         }
                     )
+                    self.knowledge["next_accept_step"] = self.knowledge["step_index"] + self.ACCEPT_COOLDOWN
 
             elif performative == "ACCEPT" and collab["waiting_accept"]:
                 if msg.get("receiver") != self.agent_name():

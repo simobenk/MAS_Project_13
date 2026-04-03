@@ -237,9 +237,66 @@ Generated outputs:
 
 - `summary_by_strategy.csv` (mean/std + termination rate)
 - `objective_boxplot.png`
-- `cleanup_boxplot.png`
+- `cleanup_boxplot.png` (generated only if at least one run reaches cleanup)
 - `messages_vs_score.png`
 - `channel_breakdown.png`
+
+## Benchmark Results (2026-04-03)
+
+The following benchmark was executed on April 3, 2026 with:
+
+- `runs=30` per strategy (total: 90 runs)
+- `max_steps=500`
+- `width=15`, `height=10`
+- `initial_green_wastes=20`
+- `num_green_robots=4`, `num_yellow_robots=3`, `num_red_robots=2`
+- `message_ttl=10`
+
+Source files:
+
+- `results/strategy_benchmark.csv`
+- `results/analysis/summary_by_strategy.csv`
+
+### Aggregated Results (mean +/- std)
+
+| Strategy | Runs | Termination Rate (%) | Cleanup Time Mean | Objective Mean +/- Std | Disposed Red Mean +/- Std | Messages Sent Mean +/- Std | Comm 1 Sent Mean | Comm 2 Sent Mean |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| `random_no_comm` | 30 | 0.0 | -1.0 | -563.67 +/- 63.60 | 0.17 +/- 0.53 | 0.00 +/- 0.00 | 0.00 | 0.00 |
+| `memory_no_comm` | 30 | 0.0 | -1.0 | -311.67 +/- 134.96 | 2.43 +/- 1.17 | 0.00 +/- 0.00 | 0.00 | 0.00 |
+| `comm` | 30 | 6.67 | 15.13 | -249.06 +/- 172.78 | 2.93 +/- 0.98 | 66.63 +/- 34.58 | 11.07 | 55.57 |
+
+### Interpretation
+
+- `comm` now gives the best objective on average (`-249.06`) after reducing `comm_2` spam.
+- `comm` is the only strategy with successful cleanups in this setup (`6.67%` of runs).
+- `memory_no_comm` remains competitive and message-free, but does not fully clean within 500 steps.
+- `comm_2` is still the dominant communication channel, but now at a manageable level.
+
+### Generated Figures
+
+#### Objective Score Distribution
+
+![Objective score boxplot](results/analysis/objective_boxplot.png)
+Description: This boxplot compares the score distribution for each strategy over 30 runs.
+Interpretation: `comm` has the best median score, `memory_no_comm` is second, and `random_no_comm` is the weakest baseline.
+
+#### Cleanup Time (Successful Runs)
+
+![Cleanup time boxplot](results/analysis/cleanup_boxplot.png)
+Description: This plot shows cleanup time only for successful runs where all waste was cleaned.
+Interpretation: Only `comm` produced successful cleanups in this benchmark, with variable completion times.
+
+#### Communication Cost vs Objective
+
+![Messages vs objective score](results/analysis/messages_vs_score.png)
+Description: Each point is one run, with total messages on x-axis and objective score on y-axis.
+Interpretation: High message volume is no longer extreme, and many `comm` runs achieve better scores than no-communication baselines.
+
+#### Communication Channel Breakdown
+
+![Comm channel breakdown](results/analysis/channel_breakdown.png)
+Description: Mean number of messages sent per channel (`comm_1`, `comm_2`) by strategy.
+Interpretation: `comm_2` is the main coordination channel, while staying in a range compatible with the final project objective.
 
 ## Conceptual Choices
 

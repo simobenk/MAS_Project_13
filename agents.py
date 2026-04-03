@@ -1,4 +1,8 @@
-"""Compatibility exports for robot agent classes."""
+"""
+Group: 13
+Date: 2026-04-03
+Members: Aymane Chalh, Adham Noureldin, Mohamed Benkirane, Team MAS 13
+"""
 
 from agents_base import BaseRobot, GreenRobotBase, YellowRobotBase, RedRobotBase
 from agents_no_comm import GreenRobotNoComm, YellowRobotNoComm, RedRobotNoComm
