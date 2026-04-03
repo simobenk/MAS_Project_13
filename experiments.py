@@ -1,6 +1,6 @@
 """
 Group: 13
-Date: 2026-03-23
+Date: 2026-04-03
 Members: Aymane Chalh, Team MAS 13
 """
 import argparse
@@ -11,7 +11,7 @@ from model import RobotMission
 
 
 def run_once(strategy, seed, steps, params):
-    """Run one simulation instance and return a flat metrics row."""
+    """Run one simulation and return one flat metrics record."""
     model = RobotMission(strategy=strategy, seed=seed, **params)
     for _ in range(steps):
         model.step()
@@ -30,12 +30,18 @@ def run_once(strategy, seed, steps, params):
         "messages_sent": model.messages_sent_total,
         "messages_expired": model.messages_expired_total,
         "messages_consumed": model.messages_consumed_total,
+        "comm_1_sent": model.channel_stats["comm_1"]["sent"],
+        "comm_2_sent": model.channel_stats["comm_2"]["sent"],
+        "comm_1_expired": model.channel_stats["comm_1"]["expired"],
+        "comm_2_expired": model.channel_stats["comm_2"]["expired"],
+        "comm_1_consumed": model.channel_stats["comm_1"]["consumed"],
+        "comm_2_consumed": model.channel_stats["comm_2"]["consumed"],
         "objective_score": model.objective_score(),
     }
 
 
 def main():
-    """Run reproducible benchmark batches and export results to CSV."""
+    """Run reproducible benchmark batches and export CSV metrics."""
     parser = argparse.ArgumentParser(description="Batch experiments for RobotMission strategies.")
     parser.add_argument("--runs", type=int, default=20, help="Number of runs per strategy.")
     parser.add_argument("--steps", type=int, default=500, help="Max steps per run.")
@@ -65,11 +71,13 @@ def main():
     rows = []
     for strategy in strategies:
         for run_index in range(args.runs):
-            seed = 1000 + run_index
-            rows.append(run_once(strategy, seed, args.steps, params))
+            rows.append(run_once(strategy, seed=1000 + run_index, steps=args.steps, params=params))
 
-    with output_path.open("w", newline="", encoding="utf-8") as f:
-        writer = csv.DictWriter(f, fieldnames=list(rows[0].keys()))
+    if not rows:
+        raise RuntimeError("No experiment rows were produced.")
+
+    with output_path.open("w", newline="", encoding="utf-8") as handle:
+        writer = csv.DictWriter(handle, fieldnames=list(rows[0].keys()))
         writer.writeheader()
         writer.writerows(rows)
 

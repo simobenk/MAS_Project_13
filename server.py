@@ -1,10 +1,11 @@
 """
 Group: 13
-Date: 2026-03-23
+Date: 2026-04-03
 Members: Aymane Chalh, Team MAS 13
 """
 from mesa.visualization import Slider, SolaraViz, make_plot_component, make_space_component
 from mesa.visualization.components import AgentPortrayalStyle
+
 from model import RobotMission
 
 
@@ -16,7 +17,7 @@ ZONE_COLORS = {
 
 
 def style_space(ax):
-    """Paints zone backgrounds and a clean grid so objects are easy to read."""
+    """Paint zone backgrounds and a clean grid for readability."""
     _, x_max = ax.get_xlim()
     _, y_max = ax.get_ylim()
     width = int(round(x_max + 0.5))
@@ -40,11 +41,13 @@ def style_space(ax):
 
 
 def agent_portrayal(agent):
-    """Maps each agent type to a shape, color, and size on the Solara grid."""
+    """Map each agent type to a shape, color and size on the Solara grid."""
     if agent is None:
-        return
+        return None
 
-    if type(agent).__name__ == "RadioactivityAgent":
+    class_name = type(agent).__name__
+
+    if class_name == "RadioactivityAgent":
         return AgentPortrayalStyle(
             color="#000000",
             marker="s",
@@ -55,7 +58,7 @@ def agent_portrayal(agent):
             zorder=0,
         )
 
-    elif type(agent).__name__ == "WasteDisposalZoneAgent":
+    if class_name == "WasteDisposalZoneAgent":
         return AgentPortrayalStyle(
             color="#111827",
             marker="s",
@@ -66,12 +69,8 @@ def agent_portrayal(agent):
             zorder=1,
         )
 
-    elif type(agent).__name__ == "WasteAgent":
-        palette = {
-            "green": "#22c55e",
-            "yellow": "#eab308",
-            "red": "#ef4444",
-        }
+    if class_name == "WasteAgent":
+        palette = {"green": "#22c55e", "yellow": "#eab308", "red": "#ef4444"}
         return AgentPortrayalStyle(
             color=palette.get(agent.color, agent.color),
             marker="o",
@@ -82,15 +81,14 @@ def agent_portrayal(agent):
             zorder=1,
         )
 
-    elif type(agent).__name__ in ["GreenAgent", "YellowAgent", "RedAgent"]:
-        if type(agent).__name__ == "GreenAgent":
-            color = "#166534"
-        elif type(agent).__name__ == "YellowAgent":
-            color = "#a16207"
-        else:
-            color = "#991b1b"
+    if hasattr(agent, "target_waste"):
+        role_color = {
+            "green": "#166534",
+            "yellow": "#a16207",
+            "red": "#991b1b",
+        }
         return AgentPortrayalStyle(
-            color=color,
+            color=role_color.get(getattr(agent, "target_waste", "green"), "#334155"),
             marker="o",
             size=200,
             edgecolors="#ffffff",
@@ -99,11 +97,14 @@ def agent_portrayal(agent):
             zorder=1,
         )
 
+    return None
+
 
 SpaceGraph = make_space_component(agent_portrayal, post_process=style_space, draw_grid=False)
 WastePlot = make_plot_component(["Green Waste", "Yellow Waste", "Red Waste", "Total Waste"])
 DisposedPlot = make_plot_component(["Disposed Red Waste"])
-MessagePlot = make_plot_component(["Messages Sent", "Messages Expired", "Messages Consumed", "Active Messages"])
+MessageTotalsPlot = make_plot_component(["Messages Sent", "Messages Expired", "Messages Consumed", "Active Messages"])
+CommChannelsPlot = make_plot_component(["Comm 1 Sent", "Comm 2 Sent", "Comm 1 Consumed", "Comm 2 Consumed"])
 ScorePlot = make_plot_component(["Objective Score"])
 
 model_params = {
@@ -117,6 +118,7 @@ model_params = {
     "strategy": Slider("Strategy (0/10/20)", value=20, min=0, max=20, step=10, dtype=int),
     "seed": Slider("Random Seed", value=42, min=0, max=9999, step=1, dtype=int),
 }
+
 
 default_model = RobotMission(
     width=15,
@@ -132,7 +134,7 @@ default_model = RobotMission(
 
 page = SolaraViz(
     model=default_model,
-    components=[SpaceGraph, WastePlot, DisposedPlot, MessagePlot, ScorePlot],
+    components=[SpaceGraph, WastePlot, DisposedPlot, MessageTotalsPlot, CommChannelsPlot, ScorePlot],
     model_params=model_params,
-    name="Robot Waste Cleanup Mission"
+    name="Robot Waste Cleanup Mission",
 )
